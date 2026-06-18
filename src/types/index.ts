@@ -93,9 +93,23 @@ export interface Lead {
   distributor_id: string;
   name: string;
   company: string;
+  email?: string;
+  phone?: string;
   score: number;
   status: string;
+  source: string;
+  notes?: string;
+  form_data?: Record<string, unknown>;
   date: string;
+  created_at: string;
+}
+
+export interface FormSubmission {
+  id: string;
+  source_url?: string;
+  form_name: string;
+  form_data: Record<string, unknown>;
+  lead_id?: string;
   created_at: string;
 }
 
@@ -176,10 +190,26 @@ export interface TableRow {
   [key: string]: string | number | boolean;
 }
 
+export interface ChatSession {
+  id: string;
+  user_id: string;
+  title: string;
+  created_at: string;
+}
+
 export interface ChatMessage {
+  id?: string;
+  session_id?: string;
   role: 'user' | 'assistant';
-  text: string;
-  time: string;
+  content?: string;
+  text?: string;
+  time?: string;
+  created_at?: string;
+}
+
+export interface AiChatResponse {
+  message: ChatMessage;
+  sessionId: string;
 }
 
 export interface FunnelStage {

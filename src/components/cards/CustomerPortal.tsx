@@ -1,9 +1,36 @@
+import { useEffect, useState } from 'react';
 import { Activity, Droplets, Cpu, Shield } from 'lucide-react';
 import { ArrowButton } from '../ui/StatusBadge';
 import ProgressBar from '../ui/Charts';
 import DemoCard from '../ui/DemoCard';
+import { fetchMyOrders } from '../../lib/queries';
+import type { Order } from '../../types';
+
+function formatDate(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function formatAmount(cents: number, currency: string): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: currency.toUpperCase(),
+    minimumFractionDigits: 0,
+  }).format(cents / 100);
+}
 
 export default function CustomerPortal() {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchMyOrders()
+      .then(setOrders)
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, []);
+
   return (
     <DemoCard number={3} title="Customer Portal">
       <div className="space-y-3">
@@ -46,25 +73,33 @@ export default function CustomerPortal() {
           </div>
         </div>
         <div className="flex gap-2">
-          <ArrowButton>Schedule Service</ArrowButton>
-          <ArrowButton>Order Probe</ArrowButton>
+          <ArrowButton onClick={() => alert('Service scheduling coming soon. Please contact support@fusion44x.com to schedule.')}>
+            Schedule Service
+          </ArrowButton>
+          <ArrowButton onClick={() => alert('Stripe checkout integration coming in Phase 2. This will enable one-click ordering of probes and parts.')}>
+            Order Probe
+          </ArrowButton>
         </div>
         <div className="bg-fusion-card-soft rounded-lg p-3 border border-fusion-border-light">
           <span className="text-[10px] font-semibold text-fusion-text-muted uppercase tracking-wider mb-1 block">Recent Orders</span>
-          <div className="space-y-1.5 text-[11px]">
-            <div className="flex justify-between">
-              <span className="text-fusion-text">Probe Replacement Kit</span>
-              <span className="text-fusion-text-muted">Feb 28</span>
+          {loading ? (
+            <div className="text-[11px] text-fusion-text-muted">Loading...</div>
+          ) : error ? (
+            <div className="text-[11px] text-red-400">{error}</div>
+          ) : orders.length === 0 ? (
+            <div className="text-[11px] text-fusion-text-muted">No orders yet</div>
+          ) : (
+            <div className="space-y-1.5 text-[11px]">
+              {orders.map((o) => (
+                <div key={o.id} className="flex justify-between">
+                  <span className="text-fusion-text">
+                    {o.customer_name ?? 'Order'} — {formatAmount(o.amount_total, o.currency)}
+                  </span>
+                  <span className="text-fusion-text-muted">{formatDate(o.created_at)}</span>
+                </div>
+              ))}
             </div>
-            <div className="flex justify-between">
-              <span className="text-fusion-text">Calibration Solution</span>
-              <span className="text-fusion-text-muted">Feb 15</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-fusion-text">Sensor Cap (x4)</span>
-              <span className="text-fusion-text-muted">Jan 30</span>
-            </div>
-          </div>
+          )}
         </div>
       </div>
     </DemoCard>

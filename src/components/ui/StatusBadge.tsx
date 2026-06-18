@@ -23,18 +23,29 @@ export default function StatusBadge({ variant, children }: StatusBadgeProps) {
   );
 }
 
-export function ArrowButton({ children }: { children: React.ReactNode }) {
+interface ButtonProps {
+  children: React.ReactNode;
+  onClick?: () => void;
+}
+
+export function ArrowButton({ children, onClick }: ButtonProps) {
   return (
-    <button className="flex items-center gap-1.5 px-3 py-1.5 bg-fusion-blue text-white text-xs font-medium rounded-lg hover:bg-fusion-blue-light transition-colors">
+    <button
+      onClick={onClick}
+      className="flex items-center gap-1.5 px-3 py-1.5 bg-fusion-blue text-white text-xs font-medium rounded-lg hover:bg-fusion-blue-light transition-colors"
+    >
       {children}
       <ArrowUpRight size={12} />
     </button>
   );
 }
 
-export function GhostButton({ children }: { children: React.ReactNode }) {
+export function GhostButton({ children, onClick }: ButtonProps) {
   return (
-    <button className="flex items-center gap-1.5 px-3 py-1.5 text-fusion-blue text-xs font-medium rounded-lg border border-fusion-blue hover:bg-blue-50 transition-colors">
+    <button
+      onClick={onClick}
+      className="flex items-center gap-1.5 px-3 py-1.5 text-fusion-blue text-xs font-medium rounded-lg border border-fusion-blue hover:bg-blue-50 transition-colors"
+    >
       {children}
       <ArrowUpRight size={12} />
     </button>

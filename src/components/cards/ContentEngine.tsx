@@ -1,55 +1,88 @@
+import { useEffect, useState } from 'react';
 import { FileText, Share2, Download, Eye } from 'lucide-react';
 import KpiCard from '../ui/KpiCard';
 import DataTable from '../ui/DataTable';
 import { ArrowButton } from '../ui/StatusBadge';
 import DemoCard from '../ui/DemoCard';
+import { fetchContentAssets } from '../../lib/queries';
+import type { ContentAsset } from '../../types';
 
-const contentColumns = [
-  { key: 'title', label: 'Title' },
-  { key: 'type', label: 'Type' },
-  { key: 'views', label: 'Views' },
-  { key: 'engagement', label: 'Eng.' },
-  { key: 'status', label: 'Status' },
-];
-
-const contentRows = [
-  { title: 'Probe Installation Guide', type: 'Video', views: '12.4K', engagement: '8.2%', status: 'Published' },
-  { title: 'Water Quality 101', type: 'Blog', views: '8.7K', engagement: '6.8%', status: 'Published' },
-  { title: 'Advanced Troubleshooting', type: 'Guide', views: '5.2K', engagement: '12.1%', status: 'Draft' },
-  { title: 'ROI Calculator', type: 'Tool', views: '3.8K', engagement: '15.3%', status: 'Published' },
-];
-
-const categories = [
-  { name: 'Blog', count: 48 },
-  { name: 'Video', count: 36 },
-  { name: 'Guide', count: 24 },
-  { name: 'Case Study', count: 18 },
-];
+function formatNumber(n: number): string {
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
+  return String(n);
+}
 
 export default function ContentEngine() {
+  const [assets, setAssets] = useState<ContentAsset[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchContentAssets()
+      .then(setAssets)
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const totalViews = assets.reduce((s, a) => s + a.views, 0);
+  const totalEngagement = assets.reduce((s, a) => s + parseFloat(a.engagement || '0'), 0);
+  const avgEngagement = assets.length ? totalEngagement / assets.length : 0;
+  const publishedCount = assets.filter((a) => a.status === 'Published').length;
+
+  const typeCounts: Record<string, number> = {};
+  for (const a of assets) {
+    typeCounts[a.type] = (typeCounts[a.type] || 0) + 1;
+  }
+
+  const contentColumns = [
+    { key: 'title', label: 'Title' },
+    { key: 'type', label: 'Type' },
+    { key: 'views', label: 'Views' },
+    { key: 'engagement', label: 'Eng.' },
+    { key: 'status', label: 'Status' },
+  ];
+
+  const contentRows = assets.map((a) => ({
+    title: a.title,
+    type: a.type,
+    views: formatNumber(a.views),
+    engagement: a.engagement ?? '—',
+    status: a.status,
+  }));
+
   return (
     <DemoCard number={6} title="Content Engine">
-      <div className="space-y-3">
-        <div className="grid grid-cols-4 gap-2">
-          <KpiCard label="Total Assets" value="246" icon={<FileText size={12} />} />
-          <KpiCard label="Engagement" value="4.8%" change="+1.2%" changeType="up" icon={<Eye size={12} />} />
-          <KpiCard label="Social Shares" value="12.4K" change="+23%" changeType="up" icon={<Share2 size={12} />} />
-          <KpiCard label="Downloads" value="8,932" change="+18%" changeType="up" icon={<Download size={12} />} />
-        </div>
-        <div>
-          <span className="text-[10px] font-semibold text-fusion-text-muted uppercase tracking-wider mb-1 block">Top Content</span>
-          <DataTable columns={contentColumns} rows={contentRows} />
-        </div>
-        <div className="flex gap-2">
-          {categories.map((cat) => (
-            <div key={cat.name} className="flex-1 bg-fusion-card-soft rounded-lg p-2 border border-fusion-border-light text-center">
-              <span className="text-[9px] text-fusion-text-muted block">{cat.name}</span>
-              <span className="text-xs font-bold text-fusion-text">{cat.count}</span>
+      {loading ? (
+        <div className="text-[11px] text-fusion-text-muted py-4 text-center">Loading...</div>
+      ) : error ? (
+        <div className="text-[11px] text-red-400 py-4 text-center">{error}</div>
+      ) : (
+        <div className="space-y-3">
+          <div className="grid grid-cols-4 gap-2">
+            <KpiCard label="Total Assets" value={String(assets.length)} icon={<FileText size={12} />} />
+            <KpiCard label="Engagement" value={`${avgEngagement.toFixed(1)}%`} change="—" icon={<Eye size={12} />} />
+            <KpiCard label="Published" value={String(publishedCount)} icon={<Share2 size={12} />} />
+            <KpiCard label="Total Views" value={formatNumber(totalViews)} icon={<Download size={12} />} />
+          </div>
+          <div>
+            <span className="text-[10px] font-semibold text-fusion-text-muted uppercase tracking-wider mb-1 block">Top Content</span>
+            <DataTable columns={contentColumns} rows={contentRows} />
+          </div>
+          {Object.keys(typeCounts).length > 0 && (
+            <div className="flex gap-2">
+              {Object.entries(typeCounts).map(([name, count]) => (
+                <div key={name} className="flex-1 bg-fusion-card-soft rounded-lg p-2 border border-fusion-border-light text-center">
+                  <span className="text-[9px] text-fusion-text-muted block">{name}</span>
+                  <span className="text-xs font-bold text-fusion-text">{count}</span>
+                </div>
+              ))}
             </div>
-          ))}
+          )}
+          <ArrowButton onClick={() => alert('Content creation form coming soon. You will be able to upload and publish videos, blogs, guides, and tools.')}>
+            Create New Content
+          </ArrowButton>
         </div>
-        <ArrowButton>Create New Content</ArrowButton>
-      </div>
+      )}
     </DemoCard>
   );
 }
