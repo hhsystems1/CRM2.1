@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth, type Role } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
+import type { Role } from '../types';
 
 interface AuthGuardProps {
   children: React.ReactNode;

@@ -63,13 +63,11 @@ export function MiniPieChart({
   const r = size / 2 - 4;
   const cx = size / 2;
   const cy = size / 2;
-  let cumulative = 0;
-
-  const arcs = segments.map((seg) => {
+  const arcs = segments.map((seg, index) => {
     const p = seg.value / total;
     const angle = p * 360;
+    const cumulative = segments.slice(0, index).reduce((sum, item) => sum + item.value, 0);
     const startAngle = (cumulative / total) * 360;
-    cumulative += seg.value;
 
     const startRad = ((startAngle - 90) * Math.PI) / 180;
     const endRad = ((startAngle + angle - 90) * Math.PI) / 180;

@@ -43,6 +43,21 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Failed to create session' }), { status: 500 });
     }
     chatSessionId = session.id;
+  } else {
+    const { data: ownedSession, error: ownershipError } = await supabase
+      .from('chat_sessions')
+      .select('id')
+      .eq('id', chatSessionId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (ownershipError) {
+      return new Response(JSON.stringify({ error: 'Failed to verify chat session' }), { status: 500 });
+    }
+
+    if (!ownedSession) {
+      return new Response(JSON.stringify({ error: 'Chat session not found' }), { status: 404 });
+    }
   }
 
   const { error: msgError } = await supabase

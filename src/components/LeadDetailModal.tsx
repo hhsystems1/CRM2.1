@@ -35,24 +35,36 @@ export default function LeadDetailModal({ isOpen, onClose, lead, onCreated, onUp
   useEffect(() => {
     if (!isOpen) return;
     fetchDistributors().then(setDistributors).catch(() => {});
-    if (lead) {
-      setForm({
-        name: lead.name ?? '',
-        email: lead.email ?? '',
-        phone: lead.phone ?? '',
-        company: lead.company ?? '',
-        score: lead.score ?? 0,
-        status: lead.status ?? 'New',
-        source: lead.source ?? 'crm',
-        notes: lead.notes ?? '',
-        distributor_id: lead.distributor_id ?? '',
-      });
-      setEditing(false);
-    } else {
-      setForm({ name: '', email: '', phone: '', company: '', score: 0, status: 'New', source: 'crm', notes: '', distributor_id: '' });
-      setEditing(true);
-    }
-    setError(null);
+
+    const nextForm = lead
+      ? {
+          name: lead.name ?? '',
+          email: lead.email ?? '',
+          phone: lead.phone ?? '',
+          company: lead.company ?? '',
+          score: lead.score ?? 0,
+          status: lead.status ?? 'New',
+          source: lead.source ?? 'crm',
+          notes: lead.notes ?? '',
+          distributor_id: lead.distributor_id ?? '',
+        }
+      : {
+          name: '',
+          email: '',
+          phone: '',
+          company: '',
+          score: 0,
+          status: 'New',
+          source: 'crm',
+          notes: '',
+          distributor_id: '',
+        };
+
+    queueMicrotask(() => {
+      setForm(nextForm);
+      setEditing(!lead);
+      setError(null);
+    });
   }, [isOpen, lead]);
 
   if (!isOpen) return null;

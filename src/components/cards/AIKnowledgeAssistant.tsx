@@ -38,11 +38,13 @@ export default function AIKnowledgeAssistant() {
 
   useEffect(() => {
     if (!activeSessionId) {
-      setMessages([]);
       return;
     }
+    let cancelled = false;
+
     fetchChatMessages(activeSessionId)
       .then((msgs) => {
+        if (cancelled) return;
         setMessages(
           msgs.map((m) => ({
             id: m.id ?? crypto.randomUUID(),
@@ -53,6 +55,10 @@ export default function AIKnowledgeAssistant() {
         );
       })
       .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
   }, [activeSessionId]);
 
   useEffect(() => {

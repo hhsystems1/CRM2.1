@@ -1,17 +1,8 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
 import type { User } from '@supabase/supabase-js';
-
-export type Role = 'manufacturer' | 'distributor' | 'customer';
-
-export interface Profile {
-  id: string;
-  user_id: string;
-  role: Role;
-  full_name: string | null;
-  company: string | null;
-  avatar_url: string | null;
-}
+import type { Profile, Role } from '../types';
 
 interface AuthState {
   user: User | null;
@@ -62,18 +53,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signUp = async (email: string, password: string, fullName: string, role: Role) => {
-    const { data, error } = await supabase.auth.signUp({ email, password });
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: fullName,
+          role,
+        },
+      },
+    });
     if (error) return { error: error.message };
-
-    if (data.user) {
-      const { error: profileError } = await supabase.from('profiles').insert({
-        user_id: data.user.id,
-        role,
-        full_name: fullName,
-        company: null,
-      });
-      if (profileError) return { error: profileError.message };
-    }
 
     return { error: null };
   };

@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
-import { useAuth, type Role } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 import { Hexagon } from 'lucide-react';
+import type { Role } from '../types';
 
 const roles: { value: Role; label: string; desc: string }[] = [
   { value: 'manufacturer', label: 'Manufacturer', desc: 'Full platform access' },
