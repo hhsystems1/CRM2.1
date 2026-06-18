@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { isSupabaseConfigured, useAuth } from '../contexts/AuthContext';
 import { Hexagon } from 'lucide-react';
 import type { Role } from '../types';
 
@@ -57,6 +57,13 @@ export default function SignupPage() {
         <div className="bg-white rounded-xl shadow-xl p-6">
           <h2 className="text-lg font-bold text-fusion-text mb-1">Create account</h2>
           <p className="text-sm text-fusion-text-muted mb-6">Join the Fusion 44X ecosystem</p>
+
+          {!isSupabaseConfigured && (
+            <div className="bg-amber-50 text-amber-900 text-sm rounded-lg px-3 py-2 mb-4">
+              Supabase env vars are missing in this deployment, so account creation is disabled
+              until `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are added in Netlify.
+            </div>
+          )}
 
           {error && (
             <div className="bg-red-50 text-red-700 text-sm rounded-lg px-3 py-2 mb-4">{error}</div>

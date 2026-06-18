@@ -13,8 +13,15 @@ import type {
   FormSubmission,
 } from '../types';
 
+function requireSupabase() {
+  if (!supabase) {
+    throw new Error('Missing Supabase configuration in this deployment');
+  }
+  return supabase;
+}
+
 async function selectAll<T>(table: string, orderColumn?: string, ascending = true): Promise<T[]> {
-  let query = supabase.from(table).select('*');
+  let query = requireSupabase().from(table).select('*');
   if (orderColumn) query = query.order(orderColumn, { ascending });
   const { data, error } = await query;
   if (error) throw error;
@@ -40,7 +47,7 @@ export async function createLead(data: {
   status?: string;
   distributor_id?: string;
 }): Promise<Lead> {
-  const { data: result, error } = await supabase
+  const { data: result, error } = await requireSupabase()
     .from('leads')
     .insert({
       name: data.name,
@@ -71,7 +78,7 @@ export async function updateLead(id: string, updates: Partial<{
   status: string;
   distributor_id: string;
 }>): Promise<Lead> {
-  const { data, error } = await supabase
+  const { data, error } = await requireSupabase()
     .from('leads')
     .update(updates)
     .eq('id', id)
@@ -112,7 +119,7 @@ export function fetchChatSessions() {
 }
 
 export async function fetchChatMessages(sessionId: string): Promise<ChatMessage[]> {
-  const { data, error } = await supabase
+  const { data, error } = await requireSupabase()
     .from('chat_messages')
     .select('*')
     .eq('session_id', sessionId)
@@ -122,7 +129,8 @@ export async function fetchChatMessages(sessionId: string): Promise<ChatMessage[
 }
 
 export async function sendChatMessage(message: string, sessionId?: string): Promise<AiChatResponse> {
-  const { data: { session } } = await supabase.auth.getSession();
+  const client = requireSupabase();
+  const { data: { session } } = await client.auth.getSession();
   const token = session?.access_token;
   if (!token) throw new Error('Not authenticated');
 
