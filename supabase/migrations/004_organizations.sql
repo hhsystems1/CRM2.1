@@ -14,28 +14,54 @@ alter table public.profiles
 alter table public.profiles
   add column if not exists organization_id uuid;
 
--- 3. Organizations table
+-- 3. Organizations table (without inline FKs so CREATE TABLE is idempotent)
 create table if not exists public.organizations (
   id             uuid primary key default gen_random_uuid(),
   name           text not null,
-  type           text not null check (type in ('hqs', 'manufacturer', 'distributor', 'customer')) default 'manufacturer',
-  parent_org_id  uuid references public.organizations(id) on delete set null,
-  created_by     uuid references auth.users(id) on delete set null,
+  type           text not null default 'manufacturer',
+  parent_org_id  uuid,
+  created_by     uuid,
   created_at     timestamptz not null default now()
 );
 
+-- Re-apply type check in case table already existed
+alter table public.organizations
+  drop constraint if exists organizations_type_check;
+
+alter table public.organizations
+  add constraint organizations_type_check
+  check (type in ('hqs', 'manufacturer', 'distributor', 'customer'));
+
 alter table public.organizations enable row level security;
 
--- 4. FK from profiles to organizations
+-- 4. FKs (dropped first to be idempotent)
+alter table public.profiles
+  drop constraint if exists profiles_organization_id_fkey;
+
 alter table public.profiles
   add constraint profiles_organization_id_fkey
   foreign key (organization_id) references public.organizations(id) on delete set null;
+
+alter table public.organizations
+  drop constraint if exists organizations_parent_org_id_fkey;
+
+alter table public.organizations
+  add constraint organizations_parent_org_id_fkey
+  foreign key (parent_org_id) references public.organizations(id) on delete set null;
+
+alter table public.organizations
+  drop constraint if exists organizations_created_by_fkey;
+
+alter table public.organizations
+  add constraint organizations_created_by_fkey
+  foreign key (created_by) references auth.users(id) on delete set null;
 
 -- 5. Indexes
 create index if not exists idx_profiles_organization_id on public.profiles(organization_id);
 create index if not exists idx_organizations_parent_org_id on public.organizations(parent_org_id);
 
--- 6. RLS Policies for organizations
+-- 6. RLS Policies for organizations (dropped first to be idempotent)
+drop policy if exists "Admins can read all organizations" on public.organizations;
 create policy "Admins can read all organizations"
   on public.organizations for select
   using (
@@ -43,12 +69,14 @@ create policy "Admins can read all organizations"
     or created_by = auth.uid()
   );
 
+drop policy if exists "Admins can insert organizations" on public.organizations;
 create policy "Admins can insert organizations"
   on public.organizations for insert
   with check (
     exists (select 1 from public.profiles where user_id = auth.uid() and role = 'admin')
   );
 
+drop policy if exists "Admins can update organizations" on public.organizations;
 create policy "Admins can update organizations"
   on public.organizations for update
   using (
@@ -56,6 +84,7 @@ create policy "Admins can update organizations"
   );
 
 -- 7. Profiles RLS — admins read all
+drop policy if exists "Admins can read all profiles" on public.profiles;
 create policy "Admins can read all profiles"
   on public.profiles for select
   using (

@@ -17,13 +17,20 @@ export default function ArticleViewerModal({ isOpen, onClose, category }: Articl
 
   useEffect(() => {
     if (!isOpen || !category) return;
-    setLoading(true);
-    setError(null);
-    setSelectedArticle(null);
-    fetchKnowledgeArticles(category.id)
-      .then(setArticles)
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+      setSelectedArticle(null);
+      try {
+        const data = await fetchKnowledgeArticles(category.id);
+        setArticles(data);
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : String(err));
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
   }, [isOpen, category]);
 
   if (!isOpen || !category) return null;
