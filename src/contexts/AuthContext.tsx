@@ -2,14 +2,16 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { isSupabaseConfigured, supabase } from '../lib/supabase';
 import type { User } from '@supabase/supabase-js';
-import type { Profile, Role } from '../types';
+import type { Profile, Role, Organization } from '../types';
+import { fetchMyOrganization } from '../lib/queries';
 
 interface AuthState {
   user: User | null;
   profile: Profile | null;
+  organization: Organization | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
-  signUp: (email: string, password: string, fullName: string, role: Role) => Promise<{ error: string | null }>;
+  signUp: (email: string, password: string, fullName: string, role: Role, company?: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -18,6 +20,7 @@ const AuthContext = createContext<AuthState | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [organization, setOrganization] = useState<Organization | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
@@ -27,7 +30,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .select('*')
       .eq('user_id', userId)
       .single();
-    setProfile(data as Profile | null);
+    const p = data as Profile | null;
+    setProfile(p);
+
+    if (p?.organization_id) {
+      try {
+        const org = await fetchMyOrganization();
+        setOrganization(org);
+      } catch {
+        setOrganization(null);
+      }
+    } else {
+      setOrganization(null);
+    }
   };
 
   useEffect(() => {
@@ -47,7 +62,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const u = session?.user ?? null;
       setUser(u);
       if (u) fetchProfile(u.id);
-      else setProfile(null);
+      else {
+        setProfile(null);
+        setOrganization(null);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -61,7 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error?.message ?? null };
   };
 
-  const signUp = async (email: string, password: string, fullName: string, role: Role) => {
+  const signUp = async (email: string, password: string, fullName: string, role: Role, company?: string) => {
     if (!supabase) {
       return { error: 'Missing Supabase configuration in this deployment' };
     }
@@ -72,6 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         data: {
           full_name: fullName,
           role,
+          company: company ?? null,
         },
       },
     });
@@ -86,7 +105,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, profile, organization, loading, signIn, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
   );

@@ -4,6 +4,7 @@ import KpiCard from '../ui/KpiCard';
 import DataTable from '../ui/DataTable';
 import { ArrowButton } from '../ui/StatusBadge';
 import DemoCard from '../ui/DemoCard';
+import ContentCreateModal from '../ContentCreateModal';
 import { fetchContentAssets } from '../../lib/queries';
 import type { ContentAsset } from '../../types';
 
@@ -16,6 +17,7 @@ export default function ContentEngine() {
   const [assets, setAssets] = useState<ContentAsset[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
 
   useEffect(() => {
     fetchContentAssets()
@@ -23,6 +25,10 @@ export default function ContentEngine() {
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
+
+  function handleCreated(asset: ContentAsset) {
+    setAssets((prev) => [asset, ...prev]);
+  }
 
   const totalViews = assets.reduce((s, a) => s + a.views, 0);
   const totalEngagement = assets.reduce((s, a) => s + parseFloat(a.engagement || '0'), 0);
@@ -78,11 +84,16 @@ export default function ContentEngine() {
               ))}
             </div>
           )}
-          <ArrowButton onClick={() => alert('Content creation form coming soon. You will be able to upload and publish videos, blogs, guides, and tools.')}>
+          <ArrowButton onClick={() => setCreateOpen(true)}>
             Create New Content
           </ArrowButton>
         </div>
       )}
+      <ContentCreateModal
+        isOpen={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreated={handleCreated}
+      />
     </DemoCard>
   );
 }

@@ -5,12 +5,14 @@ import type {
   SupportTicket,
   ContentAsset,
   KnowledgeCategory,
+  KnowledgeArticle,
   FunnelMetric,
   Order,
   ChatSession,
   ChatMessage,
   AiChatResponse,
   FormSubmission,
+  Organization,
 } from '../types';
 
 function requireSupabase() {
@@ -96,8 +98,85 @@ export function fetchTickets() {
   return selectAll<SupportTicket>('support_tickets', 'created_at', false);
 }
 
+export async function createTicket(data: {
+  subject: string;
+  description?: string;
+  priority?: string;
+}): Promise<SupportTicket> {
+  const client = requireSupabase();
+  const userId = (await client.auth.getUser()).data.user?.id;
+  const { data: result, error } = await client
+    .from('support_tickets')
+    .insert({
+      customer_id: userId,
+      subject: data.subject,
+      description: data.description ?? null,
+      priority: data.priority ?? 'Med',
+      status: 'Open',
+    })
+    .select('*')
+    .single();
+  if (error) throw error;
+  return result;
+}
+
+export async function updateTicket(id: string, updates: Partial<{
+  status: string;
+  priority: string;
+  assigned_to: string;
+  resolved_at: string;
+}>): Promise<SupportTicket> {
+  const { data, error } = await requireSupabase()
+    .from('support_tickets')
+    .update(updates)
+    .eq('id', id)
+    .select('*')
+    .single();
+  if (error) throw error;
+  return data;
+}
+
 export function fetchContentAssets() {
   return selectAll<ContentAsset>('content_assets', 'views', false);
+}
+
+export async function createContentAsset(data: {
+  title: string;
+  type: string;
+  file_url?: string;
+}): Promise<ContentAsset> {
+  const { data: result, error } = await requireSupabase()
+    .from('content_assets')
+    .insert({
+      title: data.title,
+      type: data.type,
+      file_url: data.file_url ?? null,
+      status: 'Draft',
+    })
+    .select('*')
+    .single();
+  if (error) throw error;
+  return result;
+}
+
+export function fetchKnowledgeArticles(categoryId?: string) {
+  let query = requireSupabase().from('knowledge_articles').select('*');
+  if (categoryId) query = query.eq('category_id', categoryId);
+  return query.order('created_at', { ascending: false }).then(({ data, error }) => {
+    if (error) throw error;
+    return (data ?? []) as KnowledgeArticle[];
+  });
+}
+
+export function fetchAllProfiles() {
+  return requireSupabase()
+    .from('profiles')
+    .select('id, user_id, full_name, role')
+    .order('full_name')
+    .then(({ data, error }) => {
+      if (error) throw error;
+      return data ?? [];
+    });
 }
 
 export function fetchKnowledgeCategories() {
@@ -151,4 +230,76 @@ export async function sendChatMessage(message: string, sessionId?: string): Prom
   }
 
   return res.json();
+}
+
+// === Organizations ===
+
+export function fetchOrganizations() {
+  return selectAll<Organization>('organizations', 'name');
+}
+
+export async function fetchMyOrganization(): Promise<Organization | null> {
+  const { data: profile } = await requireSupabase()
+    .from('profiles')
+    .select('organization_id')
+    .eq('user_id', (await requireSupabase().auth.getUser()).data.user?.id)
+    .single();
+
+  if (!profile?.organization_id) return null;
+
+  const { data, error } = await requireSupabase()
+    .from('organizations')
+    .select('*')
+    .eq('id', profile.organization_id)
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function fetchChildOrganizations(parentId: string): Promise<Organization[]> {
+  const { data, error } = await requireSupabase()
+    .from('organizations')
+    .select('*')
+    .eq('parent_org_id', parentId)
+    .order('name');
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function createOrganization(data: {
+  name: string;
+  type: string;
+  parent_org_id?: string;
+}): Promise<Organization> {
+  const { data: result, error } = await requireSupabase()
+    .from('organizations')
+    .insert({
+      name: data.name,
+      type: data.type,
+      parent_org_id: data.parent_org_id ?? null,
+      created_by: (await requireSupabase().auth.getUser()).data.user?.id,
+    })
+    .select('*')
+    .single();
+  if (error) throw error;
+  return result;
+}
+
+export async function fetchOrganizationProfiles(orgId: string) {
+  const { data, error } = await requireSupabase()
+    .from('profiles')
+    .select('*')
+    .eq('organization_id', orgId)
+    .order('full_name');
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function assignUserToOrganization(userId: string, orgId: string) {
+  const { error } = await requireSupabase()
+    .from('profiles')
+    .update({ organization_id: orgId })
+    .eq('user_id', userId);
+  if (error) throw error;
 }

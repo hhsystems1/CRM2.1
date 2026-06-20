@@ -5,7 +5,8 @@ import { Hexagon } from 'lucide-react';
 import type { Role } from '../types';
 
 const roles: { value: Role; label: string; desc: string }[] = [
-  { value: 'manufacturer', label: 'Manufacturer', desc: 'Full platform access' },
+  { value: 'admin', label: 'Admin', desc: 'Full platform access & user management' },
+  { value: 'manufacturer', label: 'Manufacturer', desc: 'Product & distributor management' },
   { value: 'distributor', label: 'Distributor', desc: 'Leads, sales & training' },
   { value: 'customer', label: 'Customer', desc: 'Portal, orders & support' },
 ];
@@ -15,6 +16,7 @@ export default function SignupPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [company, setCompany] = useState('');
   const [role, setRole] = useState<Role>('customer');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -26,7 +28,7 @@ export default function SignupPage() {
     e.preventDefault();
     setError(null);
     setSubmitting(true);
-    const { error } = await signUp(email, password, fullName, role);
+    const { error } = await signUp(email, password, fullName, role, company);
     if (error) setError(error);
     else setSuccess(true);
     setSubmitting(false);
@@ -102,6 +104,16 @@ export default function SignupPage() {
                 minLength={6}
                 className="w-full px-3 py-2 border border-fusion-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-fusion-blue focus:border-transparent"
                 placeholder="At least 6 characters"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-fusion-text-muted uppercase tracking-wider block mb-1">Company / Organization</label>
+              <input
+                type="text"
+                value={company}
+                onChange={(e) => setCompany(e.target.value)}
+                className="w-full px-3 py-2 border border-fusion-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-fusion-blue focus:border-transparent"
+                placeholder="Your company name"
               />
             </div>
             <div>

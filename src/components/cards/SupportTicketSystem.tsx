@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Clock, CheckCircle, AlertTriangle, Users } from 'lucide-react';
+import { Clock, CheckCircle, AlertTriangle, Users, Plus } from 'lucide-react';
 import DataTable from '../ui/DataTable';
+import { ArrowButton } from '../ui/StatusBadge';
 import DemoCard from '../ui/DemoCard';
-import { fetchTickets } from '../../lib/queries';
+import TicketCreateModal from '../TicketCreateModal';
+import { fetchTickets, fetchAllProfiles } from '../../lib/queries';
 import type { SupportTicket } from '../../types';
 
 function shortId(id: string): string {
@@ -13,13 +15,27 @@ export default function SupportTicketSystem() {
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [profiles, setProfiles] = useState<{ user_id: string; full_name: string | null }[]>([]);
+  const [createOpen, setCreateOpen] = useState(false);
 
   useEffect(() => {
-    fetchTickets()
-      .then(setTickets)
+    Promise.all([
+      fetchTickets(),
+      fetchAllProfiles(),
+    ])
+      .then(([ticketData, profileData]) => {
+        setTickets(ticketData);
+        setProfiles(profileData);
+      })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
+
+  function getAgentName(userId: string | null): string {
+    if (!userId) return 'Unassigned';
+    const profile = profiles.find((p) => p.user_id === userId);
+    return profile?.full_name ?? userId.slice(0, 6) + '...';
+  }
 
   const statusCounts: Record<string, number> = {};
   for (const t of tickets) {
@@ -28,7 +44,7 @@ export default function SupportTicketSystem() {
   }
 
   const statusCards = [
-    { label: 'Open', value: String(statusCounts['Open'] ?? statusCounts['Open'] ?? 0), icon: Clock, color: '#0057D9' },
+    { label: 'Open', value: String(statusCounts['Open'] ?? 0), icon: Clock, color: '#0057D9' },
     { label: 'In Progress', value: String(statusCounts['In Progress'] ?? 0), icon: Clock, color: '#F59E0B' },
     { label: 'Resolved', value: String(statusCounts['Resolved'] ?? 0), icon: CheckCircle, color: '#16A34A' },
     { label: 'Urgent', value: String(statusCounts['Urgent'] ?? 0), icon: AlertTriangle, color: '#DC2626' },
@@ -39,6 +55,7 @@ export default function SupportTicketSystem() {
     { key: 'subject', label: 'Subject' },
     { key: 'status', label: 'Status' },
     { key: 'priority', label: 'Priority' },
+    { key: 'assigned', label: 'Assigned' },
   ];
 
   const ticketRows = tickets.map((t) => ({
@@ -46,13 +63,22 @@ export default function SupportTicketSystem() {
     subject: t.subject,
     status: t.status,
     priority: t.priority,
+    assigned: getAgentName(t.assigned_to),
   }));
 
-  const agentCounts: Record<string, number> = {};
+  const agentMap: Record<string, { name: string; count: number }> = {};
   for (const t of tickets) {
     if (t.assigned_to) {
-      agentCounts[t.assigned_to] = (agentCounts[t.assigned_to] || 0) + 1;
+      const name = getAgentName(t.assigned_to);
+      if (!agentMap[t.assigned_to]) {
+        agentMap[t.assigned_to] = { name, count: 0 };
+      }
+      agentMap[t.assigned_to].count++;
     }
+  }
+
+  function handleCreated(ticket: SupportTicket) {
+    setTickets((prev) => [ticket, ...prev]);
   }
 
   return (
@@ -74,24 +100,29 @@ export default function SupportTicketSystem() {
               </div>
             ))}
           </div>
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-semibold text-fusion-text-muted uppercase tracking-wider">Recent Tickets</span>
+            <ArrowButton onClick={() => setCreateOpen(true)}>
+              <Plus size={12} /> New Ticket
+            </ArrowButton>
+          </div>
           <div>
-            <span className="text-[10px] font-semibold text-fusion-text-muted uppercase tracking-wider mb-1 block">Recent Tickets</span>
             {ticketRows.length > 0 ? (
               <DataTable columns={ticketColumns} rows={ticketRows} />
             ) : (
               <div className="text-[11px] text-fusion-text-muted py-2">No tickets yet</div>
             )}
           </div>
-          {Object.keys(agentCounts).length > 0 && (
+          {Object.keys(agentMap).length > 0 && (
             <div className="bg-fusion-card-soft rounded-lg p-3 border border-fusion-border-light">
               <span className="text-[10px] font-semibold text-fusion-text-muted uppercase tracking-wider mb-2 block">Support Team</span>
               <div className="grid grid-cols-3 gap-2 text-center">
-                {Object.entries(agentCounts).map(([agentId, count]) => (
+                {Object.entries(agentMap).map(([agentId, { name, count }]) => (
                   <div key={agentId}>
                     <div className="w-8 h-8 rounded-full bg-fusion-blue/10 flex items-center justify-center mx-auto mb-1">
                       <Users size={14} className="text-fusion-blue" />
                     </div>
-                    <span className="text-[10px] font-bold text-fusion-text block">{agentId.slice(0, 6)}...</span>
+                    <span className="text-[10px] font-bold text-fusion-text block">{name}</span>
                     <span className="text-[9px] text-fusion-text-muted">{count} tickets</span>
                   </div>
                 ))}
@@ -100,6 +131,11 @@ export default function SupportTicketSystem() {
           )}
         </div>
       )}
+      <TicketCreateModal
+        isOpen={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreated={handleCreated}
+      />
     </DemoCard>
   );
 }

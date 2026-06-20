@@ -3,6 +3,8 @@ import { Activity, Droplets, Cpu, Shield } from 'lucide-react';
 import { ArrowButton } from '../ui/StatusBadge';
 import ProgressBar from '../ui/Charts';
 import DemoCard from '../ui/DemoCard';
+import ServiceModal from '../ServiceModal';
+import OrderProbeModal from '../OrderProbeModal';
 import { fetchMyOrders } from '../../lib/queries';
 import type { Order } from '../../types';
 
@@ -23,6 +25,8 @@ export default function CustomerPortal() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [serviceOpen, setServiceOpen] = useState(false);
+  const [orderProbeOpen, setOrderProbeOpen] = useState(false);
 
   useEffect(() => {
     fetchMyOrders()
@@ -73,10 +77,10 @@ export default function CustomerPortal() {
           </div>
         </div>
         <div className="flex gap-2">
-          <ArrowButton onClick={() => alert('Service scheduling coming soon. Please contact support@fusion44x.com to schedule.')}>
+          <ArrowButton onClick={() => setServiceOpen(true)}>
             Schedule Service
           </ArrowButton>
-          <ArrowButton onClick={() => alert('Stripe checkout integration coming in Phase 2. This will enable one-click ordering of probes and parts.')}>
+          <ArrowButton onClick={() => setOrderProbeOpen(true)}>
             Order Probe
           </ArrowButton>
         </div>
@@ -102,6 +106,8 @@ export default function CustomerPortal() {
           )}
         </div>
       </div>
+      <ServiceModal isOpen={serviceOpen} onClose={() => setServiceOpen(false)} />
+      <OrderProbeModal isOpen={orderProbeOpen} onClose={() => setOrderProbeOpen(false)} />
     </DemoCard>
   );
 }

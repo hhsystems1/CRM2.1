@@ -6,6 +6,7 @@ import ProgressBar from '../ui/Charts';
 import { ArrowButton } from '../ui/StatusBadge';
 import DemoCard from '../ui/DemoCard';
 import LeadDetailModal from '../LeadDetailModal';
+import CallQueueModal from '../CallQueueModal';
 import { fetchLeads } from '../../lib/queries';
 import type { Lead } from '../../types';
 
@@ -27,6 +28,7 @@ export default function DistributorPortal() {
   const [search, setSearch] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [callQueueOpen, setCallQueueOpen] = useState(false);
 
   useEffect(() => {
     fetchLeads()
@@ -135,7 +137,7 @@ export default function DistributorPortal() {
               }}>
                 <Plus size={12} /> New Lead
               </ArrowButton>
-              <ArrowButton onClick={() => alert('Call queue view coming soon.')}>
+              <ArrowButton onClick={() => setCallQueueOpen(true)}>
                 <Phone size={12} /> Call Queue ({hotLeads.length})
               </ArrowButton>
             </div>
@@ -156,6 +158,11 @@ export default function DistributorPortal() {
         lead={selectedLead}
         onCreated={handleCreated}
         onUpdated={handleUpdated}
+      />
+      <CallQueueModal
+        isOpen={callQueueOpen}
+        onClose={() => setCallQueueOpen(false)}
+        leads={leads}
       />
     </>
   );

@@ -3,9 +3,11 @@ import { Hexagon, LogOut, User } from 'lucide-react';
 interface HeaderProps {
   userName?: string | null;
   onSignOut?: () => void;
+  role?: string | null;
+  orgName?: string | null;
 }
 
-export default function Header({ userName, onSignOut }: HeaderProps) {
+export default function Header({ userName, onSignOut, role, orgName }: HeaderProps) {
   return (
     <header className="flex items-center justify-between mb-6">
       <div>
@@ -26,7 +28,11 @@ export default function Header({ userName, onSignOut }: HeaderProps) {
         <div className="flex items-center gap-2 bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg px-4 py-2">
           <Hexagon size={18} className="text-fusion-blue-light" />
           <span className="text-sm font-bold text-white tracking-wider">F44X</span>
-          <span className="text-[10px] text-[#8BA0C4] font-medium">| HHS</span>
+          {role && (
+            <span className="text-[10px] text-[#8BA0C4] font-medium">
+              | {orgName || role.charAt(0).toUpperCase() + role.slice(1)}
+            </span>
+          )}
         </div>
         {onSignOut && (
           <button

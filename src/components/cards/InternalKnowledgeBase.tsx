@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { BookOpen, Wrench, FileQuestion, GraduationCap, Shield, HelpCircle, type LucideIcon } from 'lucide-react';
 import DemoCard from '../ui/DemoCard';
+import ArticleViewerModal from '../ArticleViewerModal';
 import { fetchKnowledgeCategories } from '../../lib/queries';
 import type { KnowledgeCategory } from '../../types';
 
@@ -21,6 +22,7 @@ export default function InternalKnowledgeBase() {
   const [categories, setCategories] = useState<KnowledgeCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<KnowledgeCategory | null>(null);
 
   useEffect(() => {
     fetchKnowledgeCategories()
@@ -45,7 +47,7 @@ export default function InternalKnowledgeBase() {
             return (
               <button
                 key={cat.id}
-                onClick={() => alert(`"${cat.title}" knowledge base view coming soon. This will show all ${cat.count} articles in this category.`)}
+                onClick={() => setSelectedCategory(cat)}
                 className="w-full text-left bg-fusion-card-soft rounded-lg p-3 border border-fusion-border-light hover:border-fusion-blue/30 transition-colors cursor-pointer"
               >
                 <Icon size={16} style={{ color }} className="mb-1.5" />
@@ -56,6 +58,11 @@ export default function InternalKnowledgeBase() {
           })}
         </div>
       )}
+      <ArticleViewerModal
+        isOpen={!!selectedCategory}
+        onClose={() => setSelectedCategory(null)}
+        category={selectedCategory}
+      />
     </DemoCard>
   );
 }

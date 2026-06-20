@@ -1,5 +1,5 @@
 // === Auth ===
-export type Role = 'manufacturer' | 'distributor' | 'customer';
+export type Role = 'admin' | 'manufacturer' | 'distributor' | 'customer';
 
 export interface Profile {
   id: string;
@@ -8,6 +8,16 @@ export interface Profile {
   full_name: string | null;
   company: string | null;
   avatar_url: string | null;
+  organization_id: string | null;
+  created_at: string;
+}
+
+export interface Organization {
+  id: string;
+  name: string;
+  type: 'hqs' | 'manufacturer' | 'distributor' | 'customer';
+  parent_org_id: string | null;
+  created_by: string | null;
   created_at: string;
 }
 
