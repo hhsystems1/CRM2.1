@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { FileText, Share2, Download, Eye } from 'lucide-react';
+import { FileText, Share2, Eye } from 'lucide-react';
 import KpiCard from '../ui/KpiCard';
 import DataTable from '../ui/DataTable';
 import { ArrowButton } from '../ui/StatusBadge';
@@ -31,8 +31,6 @@ export default function ContentEngine() {
   }
 
   const totalViews = assets.reduce((s, a) => s + a.views, 0);
-  const totalEngagement = assets.reduce((s, a) => s + parseFloat(a.engagement || '0'), 0);
-  const avgEngagement = assets.length ? totalEngagement / assets.length : 0;
   const publishedCount = assets.filter((a) => a.status === 'Published').length;
 
   const typeCounts: Record<string, number> = {};
