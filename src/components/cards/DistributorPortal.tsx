@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { ArrowUpRight, Users, DollarSign, Phone, Search, Plus } from 'lucide-react';
 import KpiCard from '../ui/KpiCard';
 import DataTable from '../ui/DataTable';
-import ProgressBar from '../ui/Charts';
 import { ArrowButton } from '../ui/StatusBadge';
 import DemoCard from '../ui/DemoCard';
 import LeadDetailModal from '../LeadDetailModal';
@@ -142,12 +141,6 @@ export default function DistributorPortal() {
               </ArrowButton>
             </div>
 
-            <div className="space-y-2 bg-fusion-card-soft rounded-lg p-3 border border-fusion-border-light">
-              <span className="text-[10px] font-semibold text-fusion-text-muted uppercase tracking-wider">Training Progress</span>
-              <ProgressBar value={45} label="Product Knowledge" />
-              <ProgressBar value={72} label="Sales Techniques" />
-              <ProgressBar value={90} label="Compliance" />
-            </div>
           </div>
         )}
       </DemoCard>

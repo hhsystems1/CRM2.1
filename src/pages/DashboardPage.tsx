@@ -23,7 +23,7 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-gradient-to-br from-[#020914] via-[#06172B] to-[#020914] py-6 px-6">
       <div className="max-w-[1440px] mx-auto">
         <Header userName={profile?.full_name} onSignOut={signOut} role={role} orgName={organization?.name} />
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {isManufacturer && <ManufacturerDashboard />}
           {isDistributor && <DistributorPortal />}
           {isCustomer && <CustomerPortal />}

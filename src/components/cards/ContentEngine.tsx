@@ -64,11 +64,10 @@ export default function ContentEngine() {
         <div className="text-[11px] text-red-400 py-4 text-center">{error}</div>
       ) : (
         <div className="space-y-3">
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             <KpiCard label="Total Assets" value={String(assets.length)} icon={<FileText size={12} />} />
-            <KpiCard label="Engagement" value={`${avgEngagement.toFixed(1)}%`} change="—" icon={<Eye size={12} />} />
             <KpiCard label="Published" value={String(publishedCount)} icon={<Share2 size={12} />} />
-            <KpiCard label="Total Views" value={formatNumber(totalViews)} icon={<Download size={12} />} />
+            <KpiCard label="Total Views" value={formatNumber(totalViews)} icon={<Eye size={12} />} />
           </div>
           <div>
             <span className="text-[10px] font-semibold text-fusion-text-muted uppercase tracking-wider mb-1 block">Top Content</span>

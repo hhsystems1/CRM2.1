@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import KpiCard from '../ui/KpiCard';
-import { MiniLineChart, MiniPieChart, MapPlaceholder } from '../ui/Charts';
+import { MiniLineChart, MiniPieChart } from '../ui/Charts';
 import DataTable from '../ui/DataTable';
 import DemoCard from '../ui/DemoCard';
 import { fetchDistributors, fetchLeads, fetchFunnelMetrics } from '../../lib/queries';
@@ -84,11 +84,10 @@ export default function ManufacturerDashboard() {
         <div className="text-[11px] text-red-400 py-4 text-center">{error}</div>
       ) : (
         <div className="space-y-3">
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             <KpiCard label="Total Distributors" value={String(distributors.length)} />
             <KpiCard label="Active Leads" value={String(leads.length)} />
             <KpiCard label="Revenue" value={`$${totalRevenue}K`} />
-            <KpiCard label="Inventory (Units)" value="8,450" change="-3.1%" changeType="down" />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-fusion-card-soft rounded-lg p-3 border border-fusion-border-light">
@@ -111,7 +110,6 @@ export default function ManufacturerDashboard() {
             </div>
           </div>
           <div className="grid grid-cols-1 gap-3">
-            <MapPlaceholder />
             <div>
               <span className="text-[10px] font-semibold text-fusion-text-muted uppercase tracking-wider mb-1 block">Top Distributors</span>
               {distRows.length > 0 ? (

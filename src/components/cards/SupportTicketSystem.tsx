@@ -89,7 +89,7 @@ export default function SupportTicketSystem() {
         <div className="text-[11px] text-red-400 py-4 text-center">{error}</div>
       ) : (
         <div className="space-y-3">
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             {statusCards.map(({ label, value, icon: Icon, color }) => (
               <div key={label} className="bg-fusion-card-soft rounded-lg p-3 border border-fusion-border-light">
                 <div className="flex items-center gap-2 mb-1">

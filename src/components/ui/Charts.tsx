@@ -1,5 +1,3 @@
-import { TrendingUp } from 'lucide-react';
-
 interface ProgressBarProps {
   value: number;
   label?: string;
@@ -94,13 +92,4 @@ export function MiniPieChart({
   );
 }
 
-export function MapPlaceholder() {
-  return (
-    <div className="h-24 bg-fusion-card-soft rounded-lg border border-fusion-border-light flex items-center justify-center">
-      <div className="text-center">
-        <TrendingUp size={20} className="text-fusion-text-muted mx-auto mb-1" />
-        <span className="text-[10px] text-fusion-text-muted">Geographic Distribution</span>
-      </div>
-    </div>
-  );
-}
+
