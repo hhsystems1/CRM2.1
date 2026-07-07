@@ -86,7 +86,7 @@ export default function FormSubmissionInbox() {
   }));
 
   return (
-    <DemoCard number={10} title="Customer Form Submissions" className="xl:col-span-2">
+    <DemoCard number={10} title="Form Intake Queue" className="xl:col-span-2">
       {loading ? (
         <div className="py-4 text-center text-[11px] text-fusion-text-muted">Loading...</div>
       ) : error ? (
@@ -105,7 +105,7 @@ export default function FormSubmissionInbox() {
                 Intake queue
               </p>
               <p className="text-[11px] text-fusion-text">
-                This is where customer form submissions land before they’re turned into leads.
+                Website forms land here before the AI agent routes them to the right main or sub-account.
               </p>
             </div>
             <GhostButton onClick={() => void refreshSubmissions()}>

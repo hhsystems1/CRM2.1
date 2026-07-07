@@ -5,10 +5,9 @@ import { Hexagon } from 'lucide-react';
 import type { Role } from '../types';
 
 const roles: { value: Role; label: string; desc: string }[] = [
-  { value: 'admin', label: 'Admin', desc: 'Full platform access & user management' },
-  { value: 'manufacturer', label: 'Manufacturer', desc: 'Product & distributor management' },
-  { value: 'distributor', label: 'Distributor', desc: 'Leads, sales & training' },
-  { value: 'customer', label: 'Customer', desc: 'Portal, orders & support' },
+  { value: 'admin', label: 'Main Account Admin', desc: 'Full platform access & user management' },
+  { value: 'manufacturer', label: 'Main Account', desc: 'Primary CRM workspace' },
+  { value: 'distributor', label: 'Sub-Account', desc: 'Distribution portal & lead handling' },
 ];
 
 export default function SignupPage() {
@@ -17,7 +16,7 @@ export default function SignupPage() {
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [company, setCompany] = useState('');
-  const [role, setRole] = useState<Role>('customer');
+  const [role, setRole] = useState<Role>('manufacturer');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);

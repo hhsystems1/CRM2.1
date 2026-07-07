@@ -7,6 +7,12 @@ interface HeaderProps {
   orgName?: string | null;
 }
 
+const ROLE_LABELS: Record<string, string> = {
+  admin: 'Main Account Admin',
+  manufacturer: 'Main Account',
+  distributor: 'Sub-Account',
+};
+
 export default function Header({ userName, onSignOut, role, orgName }: HeaderProps) {
   return (
     <header className="flex items-center justify-between mb-6">
@@ -30,7 +36,7 @@ export default function Header({ userName, onSignOut, role, orgName }: HeaderPro
           <span className="text-sm font-bold text-white tracking-wider">F44X</span>
           {role && (
             <span className="text-[10px] text-[#8BA0C4] font-medium">
-              | {orgName || role.charAt(0).toUpperCase() + role.slice(1)}
+              | {orgName || ROLE_LABELS[role] || role.charAt(0).toUpperCase() + role.slice(1)}
             </span>
           )}
         </div>
