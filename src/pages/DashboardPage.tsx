@@ -35,16 +35,16 @@ export default function DashboardPage() {
                 <p className="font-semibold text-white">Main account</p>
                 <p>Owns the CRM, training, and approval flow. This is the internal control center.</p>
               </div>
-              <div>
-                <p className="font-semibold text-white">Sub-accounts</p>
-                <p>Distribution workspaces that can handle leads, social, and assigned intake.</p>
-              </div>
-              <div>
-                <p className="font-semibold text-white">Customer portal</p>
-                <p>Not part of this CRM. End users stay out of this app completely.</p>
-              </div>
+            <div>
+              <p className="font-semibold text-white">Sub-accounts</p>
+              <p>Distribution workspaces that can handle leads, social, and assigned intake.</p>
             </div>
-          </section>
+            <div>
+              <p className="font-semibold text-white">No customer portal</p>
+              <p>End users stay out of this CRM completely. Distribution only, no public-facing customer login here.</p>
+            </div>
+          </div>
+        </section>
 
           <section className="rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
             <div className="mb-3 inline-flex rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-emerald-300">

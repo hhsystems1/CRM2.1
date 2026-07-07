@@ -113,6 +113,7 @@ export async function createSocialPost(data: {
   platform: string;
   content: string;
   campaign?: string;
+  organization_id?: string | null;
   status?: SocialPostStatus;
   scheduled_for?: string | null;
   approval_notes?: string | null;
@@ -143,12 +144,12 @@ export async function createSocialPost(data: {
       platform: data.platform,
       content: data.content,
       campaign: data.campaign ?? null,
+      organization_id: data.organization_id ?? profile?.organization_id ?? null,
       status: data.status ?? 'Draft',
       scheduled_for: data.scheduled_for ?? null,
       approval_notes: data.approval_notes ?? null,
       media_url: data.media_url ?? null,
       post_url: data.post_url ?? null,
-      organization_id: profile?.organization_id ?? null,
       created_by: session.user.id,
     })
     .select('*')

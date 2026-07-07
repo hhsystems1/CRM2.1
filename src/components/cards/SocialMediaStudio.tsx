@@ -1,8 +1,14 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { CalendarDays, CheckCircle2, Send, ShieldCheck, Sparkles } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { createSocialPost, fetchSocialPosts, updateSocialPost } from '../../lib/queries';
-import type { SocialPost, SocialPostStatus } from '../../types';
+import {
+  createSocialPost,
+  fetchChildOrganizations,
+  fetchMyOrganization,
+  fetchSocialPosts,
+  updateSocialPost,
+} from '../../lib/queries';
+import type { Organization, SocialPost, SocialPostStatus } from '../../types';
 import DemoCard from '../ui/DemoCard';
 import DataTable from '../ui/DataTable';
 import KpiCard from '../ui/KpiCard';
@@ -41,8 +47,10 @@ export default function SocialMediaStudio() {
   const { user, profile } = useAuth();
   const canManage = profile?.role === 'manufacturer' || profile?.role === 'distributor';
   const [posts, setPosts] = useState<SocialPost[]>([]);
+  const [accounts, setAccounts] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [accountsLoaded, setAccountsLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
     title: '',
@@ -50,6 +58,7 @@ export default function SocialMediaStudio() {
     content: '',
     campaign: '',
     scheduled_for: '',
+    organization_id: '',
   });
 
   useEffect(() => {
@@ -58,6 +67,54 @@ export default function SocialMediaStudio() {
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    if (!canManage) {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadAccounts() {
+      try {
+        const main = await fetchMyOrganization();
+        if (!main) {
+          if (!cancelled) {
+            setAccounts([]);
+            setForm((prev) => ({ ...prev, organization_id: '' }));
+          }
+          return;
+        }
+
+        const children = await fetchChildOrganizations(main.id);
+        if (cancelled) return;
+
+        const nextAccounts = [main, ...children];
+        setAccounts(nextAccounts);
+        setForm((prev) => ({
+          ...prev,
+          organization_id:
+            prev.organization_id && nextAccounts.some((account) => account.id === prev.organization_id)
+              ? prev.organization_id
+              : main.id,
+        }));
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Failed to load accounts');
+        }
+      } finally {
+        if (!cancelled) {
+          setAccountsLoaded(true);
+        }
+      }
+    }
+
+    void loadAccounts();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [canManage]);
 
   const counts = useMemo(() => {
     const totals: Record<SocialPostStatus, number> = {
@@ -88,6 +145,7 @@ export default function SocialMediaStudio() {
         platform: form.platform,
         content: form.content.trim(),
         campaign: form.campaign.trim() || undefined,
+        organization_id: form.organization_id || undefined,
         status: 'Draft',
         scheduled_for: form.scheduled_for ? new Date(form.scheduled_for).toISOString() : null,
       });
@@ -99,6 +157,7 @@ export default function SocialMediaStudio() {
         content: '',
         campaign: '',
         scheduled_for: '',
+        organization_id: accounts[0]?.id ?? '',
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create social post');
@@ -127,12 +186,18 @@ export default function SocialMediaStudio() {
   }
 
   const columns = [
+    { key: 'account', label: 'Account' },
     { key: 'title', label: 'Title' },
     { key: 'platform', label: 'Platform' },
     { key: 'status', label: 'Status' },
     { key: 'scheduled_for', label: 'Scheduled' },
     { key: 'actions', label: 'Actions' },
   ];
+
+  const accountNameById = useMemo(
+    () => new Map(accounts.map((account) => [account.id, account.name] as const)),
+    [accounts]
+  );
 
   const rows = posts.map((post) => {
     const action =
@@ -173,6 +238,7 @@ export default function SocialMediaStudio() {
       );
 
     return {
+      account: accountNameById.get(post.organization_id ?? '') ?? 'Main account',
       title: post.title,
       platform: post.platform,
       status: (
@@ -186,8 +252,8 @@ export default function SocialMediaStudio() {
   });
 
   return (
-    <DemoCard number={9} title="Social Media Studio" className="xl:col-span-2">
-      {loading ? (
+    <DemoCard number={9} title="Post Maker" className="xl:col-span-2">
+      {loading || (canManage && !accountsLoaded) ? (
         <div className="py-4 text-center text-[11px] text-fusion-text-muted">Loading...</div>
       ) : (
         <div className="space-y-3">
@@ -234,6 +300,43 @@ export default function SocialMediaStudio() {
                 </div>
               </div>
 
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-fusion-text-muted">
+                    Target account
+                  </label>
+                  <select
+                    value={form.organization_id}
+                    onChange={(e) => setForm((prev) => ({ ...prev, organization_id: e.target.value }))}
+                    className="w-full rounded-lg border border-fusion-border bg-white px-3 py-2 text-sm"
+                    required
+                  >
+                    <option value="" disabled>Select account</option>
+                    {accounts.map((account) => (
+                      <option key={account.id} value={account.id}>
+                        {account.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-fusion-text-muted">
+                    Publish mode
+                  </label>
+                  <select
+                    value={form.scheduled_for ? 'scheduled' : 'draft'}
+                    onChange={(e) => setForm((prev) => ({
+                      ...prev,
+                      scheduled_for: e.target.value === 'scheduled' ? prev.scheduled_for : '',
+                    }))}
+                    className="w-full rounded-lg border border-fusion-border bg-white px-3 py-2 text-sm"
+                  >
+                    <option value="draft">Draft</option>
+                    <option value="scheduled">Scheduled</option>
+                  </select>
+                </div>
+              </div>
+
               <div>
                 <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-fusion-text-muted">
                   Content
@@ -273,6 +376,21 @@ export default function SocialMediaStudio() {
               </div>
 
               <button
+                type="button"
+                onClick={() =>
+                  setForm((prev) => ({
+                    ...prev,
+                    content:
+                      prev.content ||
+                      `Hook: ${prev.title || 'New offer'}\n\nBody: Share why this matters, how it helps, and what to do next.\n\nCTA: Book the call, review the offer, or reply to get the full details.`,
+                  }))
+                }
+                className="rounded-lg border border-fusion-border-light px-3 py-2 text-xs font-medium text-fusion-text hover:border-fusion-blue/30 hover:text-fusion-blue"
+              >
+                Generate simple draft
+              </button>
+
+              <button
                 type="submit"
                 disabled={saving}
                 className="inline-flex items-center gap-1.5 rounded-lg bg-fusion-blue px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-fusion-blue-light disabled:opacity-50"
@@ -288,7 +406,7 @@ export default function SocialMediaStudio() {
 
           <div>
             <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-fusion-text-muted">
-              Social Queue
+              Post Queue
             </span>
             {rows.length > 0 ? (
               <DataTable columns={columns} rows={rows} />
