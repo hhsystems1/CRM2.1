@@ -13,6 +13,8 @@ import type {
   AiChatResponse,
   FormSubmission,
   Organization,
+  SocialPost,
+  SocialPostStatus,
 } from '../types';
 
 function requireSupabase() {
@@ -20,6 +22,14 @@ function requireSupabase() {
     throw new Error('Missing Supabase configuration in this deployment');
   }
   return supabase;
+}
+
+function requireSupabaseUrl() {
+  const url = import.meta.env.VITE_SUPABASE_URL;
+  if (!url) {
+    throw new Error('Missing VITE_SUPABASE_URL');
+  }
+  return url.replace(/\/$/, '');
 }
 
 async function selectAll<T>(table: string, orderColumn?: string, ascending = true): Promise<T[]> {
@@ -92,6 +102,85 @@ export async function updateLead(id: string, updates: Partial<{
 
 export function fetchFormSubmissions() {
   return selectAll<FormSubmission>('form_submissions', 'created_at', false);
+}
+
+export function fetchSocialPosts() {
+  return selectAll<SocialPost>('social_posts', 'created_at', false);
+}
+
+export async function createSocialPost(data: {
+  title: string;
+  platform: string;
+  content: string;
+  campaign?: string;
+  status?: SocialPostStatus;
+  scheduled_for?: string | null;
+  approval_notes?: string | null;
+  media_url?: string | null;
+  post_url?: string | null;
+}): Promise<SocialPost> {
+  const client = requireSupabase();
+  const {
+    data: { session },
+  } = await client.auth.getSession();
+
+  if (!session?.user) {
+    throw new Error('Not authenticated');
+  }
+
+  const { data: profile, error: profileError } = await client
+    .from('profiles')
+    .select('organization_id')
+    .eq('user_id', session.user.id)
+    .maybeSingle();
+
+  if (profileError) throw profileError;
+
+  const { data: created, error } = await client
+    .from('social_posts')
+    .insert({
+      title: data.title,
+      platform: data.platform,
+      content: data.content,
+      campaign: data.campaign ?? null,
+      status: data.status ?? 'Draft',
+      scheduled_for: data.scheduled_for ?? null,
+      approval_notes: data.approval_notes ?? null,
+      media_url: data.media_url ?? null,
+      post_url: data.post_url ?? null,
+      organization_id: profile?.organization_id ?? null,
+      created_by: session.user.id,
+    })
+    .select('*')
+    .single();
+  if (error) throw error;
+  return created as SocialPost;
+}
+
+export async function updateSocialPost(
+  id: string,
+  updates: Partial<{
+    title: string;
+    platform: string;
+    content: string;
+    campaign: string | null;
+    status: SocialPostStatus;
+    scheduled_for: string | null;
+    approved_by: string | null;
+    published_at: string | null;
+    approval_notes: string | null;
+    media_url: string | null;
+    post_url: string | null;
+  }>
+): Promise<SocialPost> {
+  const { data, error } = await requireSupabase()
+    .from('social_posts')
+    .update(updates)
+    .eq('id', id)
+    .select('*')
+    .single();
+  if (error) throw error;
+  return data as SocialPost;
 }
 
 export function fetchTickets() {
@@ -213,20 +302,33 @@ export async function sendChatMessage(message: string, sessionId?: string): Prom
   const token = session?.access_token;
   if (!token) throw new Error('Not authenticated');
 
-  const functionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-chat`;
+  const functionUrl = `${requireSupabaseUrl()}/functions/v1/ai-chat`;
 
-  const res = await fetch(functionUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ message, sessionId }),
-  });
+  let res: Response;
+  try {
+    res = await fetch(functionUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ message, sessionId }),
+    });
+  } catch {
+    throw new Error(`Failed to reach AI chat function at ${functionUrl}`);
+  }
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: 'Request failed' }));
-    throw new Error(err.error ?? 'Failed to send message');
+    const raw = await res.text().catch(() => '');
+    try {
+      const parsed = JSON.parse(raw) as { error?: string };
+      if (parsed.error) {
+        throw new Error(parsed.error);
+      }
+    } catch {
+      // Fall through to the raw text fallback below.
+    }
+    throw new Error(raw || 'Failed to send message');
   }
 
   return res.json();

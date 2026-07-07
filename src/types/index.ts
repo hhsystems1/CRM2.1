@@ -4,11 +4,11 @@ export type Role = 'admin' | 'manufacturer' | 'distributor' | 'customer';
 export interface Profile {
   id: string;
   user_id: string;
+  organization_id: string | null;
   role: Role;
   full_name: string | null;
   company: string | null;
   avatar_url: string | null;
-  organization_id: string | null;
   created_at: string;
 }
 
@@ -120,6 +120,31 @@ export interface FormSubmission {
   form_name: string;
   form_data: Record<string, unknown>;
   lead_id?: string;
+  created_at: string;
+}
+
+export type SocialPostStatus =
+  | 'Draft'
+  | 'Ready for Review'
+  | 'Approved'
+  | 'Scheduled'
+  | 'Published';
+
+export interface SocialPost {
+  id: string;
+  organization_id: string | null;
+  created_by: string | null;
+  approved_by: string | null;
+  title: string;
+  platform: string;
+  content: string;
+  campaign: string | null;
+  status: SocialPostStatus;
+  scheduled_for: string | null;
+  published_at: string | null;
+  approval_notes: string | null;
+  post_url: string | null;
+  media_url: string | null;
   created_at: string;
 }
 
