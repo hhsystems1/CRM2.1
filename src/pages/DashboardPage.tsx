@@ -9,6 +9,7 @@ import ContentEngine from '../components/cards/ContentEngine';
 import InternalKnowledgeBase from '../components/cards/InternalKnowledgeBase';
 import SupportTicketSystem from '../components/cards/SupportTicketSystem';
 import SocialMediaStudio from '../components/cards/SocialMediaStudio';
+import ProbeSalesDashboard from '../components/cards/ProbeSalesDashboard';
 import FormSubmissionInbox from '../components/cards/FormSubmissionInbox';
 
 export default function DashboardPage() {
@@ -63,6 +64,7 @@ export default function DashboardPage() {
           {isManufacturer && <ManufacturerDashboard />}
           {isSubAccount && <DistributorPortal />}
           {isInternal && <SocialMediaStudio />}
+          {isInternal && <ProbeSalesDashboard />}
           {isInternal && <FormSubmissionInbox />}
           <AIKnowledgeAssistant />
           <FunnelCustomerJourney />

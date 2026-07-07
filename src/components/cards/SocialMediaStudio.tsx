@@ -1,5 +1,13 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { CalendarDays, CheckCircle2, Send, ShieldCheck, Sparkles } from 'lucide-react';
+import {
+  BarChart3,
+  CalendarDays,
+  CheckCircle2,
+  Lightbulb,
+  Send,
+  ShieldCheck,
+  Sparkles,
+} from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import {
   createSocialPost,
@@ -15,6 +23,37 @@ import KpiCard from '../ui/KpiCard';
 import StatusBadge from '../ui/StatusBadge';
 
 const PLATFORMS = ['Instagram', 'Facebook', 'X', 'LinkedIn', 'TikTok'] as const;
+
+const IDEA_SEEDS = [
+  {
+    title: 'Probe demo in one minute',
+    platform: 'Instagram',
+    campaign: 'Probe Proof',
+    content:
+      'Hook: Show the Fusion44X probe solving the problem in one minute.\n\nBody: Focus on the before and after. What the operator sees. Why it matters. Keep it visual and direct.\n\nCTA: Ask for a demo or a walkthrough.',
+  },
+  {
+    title: 'Distribution win story',
+    platform: 'LinkedIn',
+    campaign: 'Partner Wins',
+    content:
+      'Hook: A real distribution story beats a generic product pitch every time.\n\nBody: Share the problem, the setup, and the result. Highlight the main account and sub-account structure where it helps the rollout.\n\nCTA: Reach out if you want the partner version of the playbook.',
+  },
+  {
+    title: 'Water tip of the day',
+    platform: 'X',
+    campaign: 'Daily Education',
+    content:
+      'Hook: The fastest way to lose trust is to ignore small water issues.\n\nBody: Give one practical tip that helps someone understand water quality, maintenance, or early warning signs.\n\nCTA: Follow for the next quick tip.',
+  },
+  {
+    title: 'FAQ turned into a post',
+    platform: 'Facebook',
+    campaign: 'FAQ Series',
+    content:
+      'Hook: Here is the question we hear most often.\n\nBody: Answer it in plain English, then connect it back to the probe or service workflow.\n\nCTA: Comment with the next question you want answered.',
+  },
+] as const;
 
 function formatDateTime(value: string | null): string {
   if (!value) return '—';
@@ -132,6 +171,27 @@ export default function SocialMediaStudio() {
     return totals;
   }, [posts]);
 
+  const platformStats = useMemo(() => {
+    const totals = new Map<string, number>();
+    for (const post of posts) {
+      totals.set(post.platform, (totals.get(post.platform) ?? 0) + 1);
+    }
+
+    const totalPosts = posts.length || 1;
+    return Array.from(totals.entries())
+      .map(([platform, count]) => ({
+        platform,
+        count,
+        pct: Math.round((count / totalPosts) * 100),
+      }))
+      .sort((a, b) => b.count - a.count);
+  }, [posts]);
+
+  const recentPublished = useMemo(
+    () => posts.filter((post) => post.status === 'Published').slice(0, 3),
+    [posts]
+  );
+
   async function handleCreate(e: FormEvent) {
     e.preventDefault();
     if (!canManage) return;
@@ -183,6 +243,19 @@ export default function SocialMediaStudio() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update post');
     }
+  }
+
+  function applyIdea(seed: (typeof IDEA_SEEDS)[number]) {
+    if (!canManage) return;
+
+    setForm((prev) => ({
+      ...prev,
+      title: seed.title,
+      platform: seed.platform,
+      content: seed.content,
+      campaign: seed.campaign,
+      organization_id: prev.organization_id || accounts[0]?.id || '',
+    }));
   }
 
   const columns = [
@@ -252,7 +325,7 @@ export default function SocialMediaStudio() {
   });
 
   return (
-    <DemoCard number={9} title="Post Maker" className="xl:col-span-2">
+    <DemoCard number={9} title="Social Media Studio" className="xl:col-span-2">
       {loading || (canManage && !accountsLoaded) ? (
         <div className="py-4 text-center text-[11px] text-fusion-text-muted">Loading...</div>
       ) : (
@@ -263,6 +336,107 @@ export default function SocialMediaStudio() {
             <KpiCard label="Approved" value={String(counts.Approved)} icon={<ShieldCheck size={12} />} />
             <KpiCard label="Scheduled" value={String(counts.Scheduled)} icon={<CalendarDays size={12} />} />
             <KpiCard label="Published" value={String(counts.Published)} icon={<CheckCircle2 size={12} />} />
+          </div>
+
+          <div className="grid gap-3 lg:grid-cols-[1.1fr_0.9fr]">
+            <div className="rounded-lg border border-fusion-border-light bg-fusion-card-soft p-3">
+              <div className="mb-3 flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-fusion-text-muted">
+                    Social data
+                  </p>
+                  <h4 className="text-sm font-semibold text-fusion-text">Channel mix and recent wins</h4>
+                </div>
+                <BarChart3 size={14} className="text-fusion-blue" />
+              </div>
+
+              {platformStats.length > 0 ? (
+                <div className="space-y-2">
+                  {platformStats.map((item) => (
+                    <div key={item.platform} className="rounded-lg border border-fusion-border-light bg-white px-3 py-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium text-fusion-text">{item.platform}</span>
+                        <span className="text-[10px] font-semibold text-fusion-text-muted">
+                          {item.count} posts / {item.pct}%
+                        </span>
+                      </div>
+                      <div className="mt-1 h-1.5 rounded-full bg-gray-100">
+                        <div
+                          className="h-full rounded-full bg-fusion-blue"
+                          style={{ width: `${item.pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-lg border border-dashed border-fusion-border-light px-3 py-4 text-center text-[11px] text-fusion-text-muted">
+                  No social posts yet. Add a draft and this panel turns into an actual dashboard.
+                </div>
+              )}
+
+              <div className="mt-3 space-y-2">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-fusion-text-muted">
+                  Recent published posts
+                </p>
+                {recentPublished.length > 0 ? (
+                  recentPublished.map((post) => (
+                    <div key={post.id} className="rounded-lg border border-fusion-border-light bg-white px-3 py-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-semibold text-fusion-text">{post.title}</span>
+                        <StatusBadge variant="success">Published</StatusBadge>
+                      </div>
+                      <div className="mt-1 flex items-center justify-between text-[10px] text-fusion-text-muted">
+                        <span>{post.platform}</span>
+                        <span>{formatDateTime(post.published_at ?? post.created_at)}</span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="rounded-lg border border-dashed border-fusion-border-light px-3 py-4 text-center text-[11px] text-fusion-text-muted">
+                    Nothing published yet.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-fusion-border-light bg-fusion-card-soft p-3">
+              <div className="mb-3 flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-fusion-text-muted">
+                    Idea lab
+                  </p>
+                  <h4 className="text-sm font-semibold text-fusion-text">One-click post ideas</h4>
+                </div>
+                <Lightbulb size={14} className="text-fusion-blue" />
+              </div>
+
+              <div className="space-y-2">
+                {IDEA_SEEDS.map((seed) => (
+                  <button
+                    key={seed.title}
+                    type="button"
+                    onClick={() => applyIdea(seed)}
+                    disabled={!canManage}
+                    className="w-full rounded-lg border border-fusion-border-light bg-white px-3 py-2 text-left transition-colors hover:border-fusion-blue/30 hover:bg-blue-50/40 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-semibold text-fusion-text">{seed.title}</span>
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-fusion-blue">
+                        {seed.platform}
+                      </span>
+                    </div>
+                    <p className="mt-1 line-clamp-2 text-[11px] leading-5 text-fusion-text-muted">
+                      {seed.content.split('\n\n')[0]}
+                    </p>
+                  </button>
+                ))}
+              </div>
+
+              <div className="mt-3 rounded-lg border border-fusion-border-light bg-white px-3 py-2 text-[11px] text-fusion-text-muted">
+                Tap one of the ideas to load a draft into the post creator below. No more staring at the cursor like it owes you money.
+              </div>
+            </div>
           </div>
 
           {error && (
@@ -294,7 +468,9 @@ export default function SocialMediaStudio() {
                     className="w-full rounded-lg border border-fusion-border bg-white px-3 py-2 text-sm"
                   >
                     {PLATFORMS.map((platform) => (
-                      <option key={platform} value={platform}>{platform}</option>
+                      <option key={platform} value={platform}>
+                        {platform}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -311,7 +487,9 @@ export default function SocialMediaStudio() {
                     className="w-full rounded-lg border border-fusion-border bg-white px-3 py-2 text-sm"
                     required
                   >
-                    <option value="" disabled>Select account</option>
+                    <option value="" disabled>
+                      Select account
+                    </option>
                     {accounts.map((account) => (
                       <option key={account.id} value={account.id}>
                         {account.name}
@@ -325,10 +503,12 @@ export default function SocialMediaStudio() {
                   </label>
                   <select
                     value={form.scheduled_for ? 'scheduled' : 'draft'}
-                    onChange={(e) => setForm((prev) => ({
-                      ...prev,
-                      scheduled_for: e.target.value === 'scheduled' ? prev.scheduled_for : '',
-                    }))}
+                    onChange={(e) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        scheduled_for: e.target.value === 'scheduled' ? prev.scheduled_for : '',
+                      }))
+                    }
                     className="w-full rounded-lg border border-fusion-border bg-white px-3 py-2 text-sm"
                   >
                     <option value="draft">Draft</option>

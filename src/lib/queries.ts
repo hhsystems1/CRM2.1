@@ -8,6 +8,7 @@ import type {
   KnowledgeArticle,
   FunnelMetric,
   Order,
+  OrderItem,
   ChatSession,
   ChatMessage,
   AiChatResponse,
@@ -277,8 +278,16 @@ export function fetchFunnelMetrics() {
   return selectAll<FunnelMetric>('funnel_metrics', 'recorded_at');
 }
 
-export function fetchMyOrders() {
+export function fetchOrders() {
   return selectAll<Order>('orders', 'created_at', false);
+}
+
+export function fetchMyOrders() {
+  return fetchOrders();
+}
+
+export function fetchOrderItems() {
+  return selectAll<OrderItem>('order_items');
 }
 
 // === Chat ===
